@@ -1,9 +1,10 @@
 import requests
 import os
+from requests.utils import default_user_agent
 
 
 def main():
-    stats = getstats(os.environ.get("CIRCLE_TOKEN"))
+    stats = get_credits_used(os.environ.get("CIRCLE_TOKEN"), "gh/silvercar/mob-api")
     print(stats["text"])
     print(
         "\n".join(
@@ -12,11 +13,16 @@ def main():
     )
 
 
-def getstats(circle_token):
+def get_credits_used(circle_token, project_slug):
     result = dict()
     r = requests.get(
-        "https://circleci.com/api/v2/insights/gh/silvercar/mob-api/workflows/build/jobs",
-        headers={"Circle-Token": circle_token},
+        "https://circleci.com/api/v2/insights/{0}/workflows/build/jobs".format(
+            project_slug
+        ),
+        headers={
+            "Circle-Token": circle_token,
+            "User-Agent": "{0} {1}".format("tmhall99/buildstats", default_user_agent()),
+        },
     )
     result["text"] = r.text
     jobs = r.json()
