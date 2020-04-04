@@ -1,15 +1,29 @@
 import os
 from highcharts import Highchart
-from .main import get_credits_by_job
+from .main import get_credits_by_job, get_duration_by_job
 from flask import Flask
 
 
 app = Flask(__name__)
 
 
-@app.route("/")
-def hello_world():
-    stats = get_credits_by_job(os.environ.get("CIRCLE_TOKEN"), "gh/silvercar/mob-api")
+@app.route("/credits")
+def credits():
+    return renderChart(
+        get_credits_by_job(os.environ.get("CIRCLE_TOKEN"), "gh/silvercar/mob-api"),
+        "Total Credits Used",
+    )
+
+
+@app.route("/duration")
+def duration():
+    return renderChart(
+        get_duration_by_job(os.environ.get("CIRCLE_TOKEN"), "gh/silvercar/mob-api"),
+        "Duration",
+    )
+
+
+def renderChart(stats, bottom, left="Workflow Job"):
     keys = [k for k, _ in stats.items()]
     values = [v for _, v in stats.items()]
 
@@ -18,15 +32,15 @@ def hello_world():
     chart.set_options("chart", {"inverted": True})
 
     options = {
-        "title": {"text": "Total Credits Used by CircleCI Workflow Job"},
+        "title": {"text": "{0} by {1}".format(bottom, left)},
         "xAxis": {
             "categories": keys,
-            "title": {"text": None},
+            "title": {"text": left},
             "maxPadding": 0.05,
             "showLastLabel": True,
         },
         "yAxis": {
-            "title": {"text": "Total Credits Used"},
+            "title": {"text": bottom},
             "labels": {
                 "formatter": "function () {\
                     return this.value;\
@@ -42,6 +56,6 @@ def hello_world():
     }
 
     chart.set_dict_options(options)
-    chart.add_data_set(values, "bar", "Total Credits Used")
+    chart.add_data_set(values, "bar")
 
     return str(chart)
